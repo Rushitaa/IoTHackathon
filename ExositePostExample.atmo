@@ -1,0 +1,429 @@
+{
+  "header": {
+    "data": {
+      "order": [
+        "Globals",
+        "Interval",
+        "Connected",
+        "Disconnected",
+        "Setup"
+      ],
+      "Globals": {
+        "name": "Globals",
+        "func": "#include \"callbacks.h\"",
+        "code": "\n// Storing these WebIo element parameters here to make it easier to cut and paste into connector attributes...\n// Headers object:  {\"X-Exosite-CIK\": \"YourCikHere\", \"Accept\":\"application/x-www-form-urlencoded; charset=utf-8\"}\n// Value object:  {\"YourDataSourceAliasHere\": value}\n\n#define NUM_TEMPS 1\n#define DEBUG_STRING_LENGTH 128\n\nstatic void getAverageTemperatures(float *, float *);\nstatic void getNextTemperature(void);\n\nchar debugString[DEBUG_STRING_LENGTH];  // debug string\nfloat temps[NUM_TEMPS];                 // temps for averaging\nint nextTempsIndex = 0;                 // index into temps\n\nstatic void getAverageTemperatures(float *degC, float *degF) {\n    int i;\n    float tmp;\n    // Compute average\n    tmp = 0.0f;\n    for (i=0; i<NUM_TEMPS; i++) {\n        tmp += temps[i];\n    }\n    *degC = tmp / NUM_TEMPS;\n    // Convert to Farenheit\n    *degF = *degC * 1.8f + 32.0f;\n}\n  \nstatic void getNextTemperature() {\n    // Pop next value into averaging table\n    temps[nextTempsIndex++] = TMP006_GetObjectTemperature(0); // pop value into averaging buffer\n    if (nextTempsIndex >= NUM_TEMPS) {\n        nextTempsIndex = 0;\n    }\n}\n\n",
+        "close": "//END"
+      },
+      "Interval": {
+        "name": "Interval",
+        "func": "\nvoid interval() {",
+        "code": "\n    // Get the IR Temp Sensor reading\n    getNextTemperature();\n",
+        "close": "}"
+      },
+      "Connected": {
+        "name": "Connected",
+        "func": "\nvoid connected() {",
+        "code": "",
+        "close": "}"
+      },
+      "Disconnected": {
+        "name": "Disconnected",
+        "func": "\nvoid disconnected() {",
+        "code": "",
+        "close": "}"
+      },
+      "Setup": {
+        "name": "Setup",
+        "func": "\nvoid setup() {",
+        "code": "    int i;\n    float value;\n\tAIR_GPIO_Init();\n\tAIR_UART_Init();\n\tAIR_I2C_Init();\n\tAIR_SPI_Init();\n\tBUZZER_Init();\n\tAIR_POWER_Init();\n    AIR_POWER_SetMode(AIR_POWER_NOSLEEP);\t\n\t// Initialize the IR Temp Sensor        \n\tTMP006_SetDataReadyEnable(0, 1);\n    value = TMP006_GetObjectTemperature(0);\n    for (i=0; i<NUM_TEMPS; i++) {                       // Allow for a rolling average of NUM_TEMPS prior reads\n        temps[i] = value;\n    }\n",
+        "close": "}"
+      }
+    },
+    "boardConfiguration": {
+      "ble": {
+        "name": "Bluetooth Low Energy",
+        "file": "ble_config.h",
+        "values": {
+          "localName": {
+            "name": "Local Name",
+            "input": "TextField",
+            "prefix": "#define BLE_LOCAL_NAME \"",
+            "value": "Exosite",
+            "suffix": "\"",
+            "regex": "^[a-zA-Z0-9_.]*$"
+          },
+          "version": {
+            "name": "Version",
+            "input": "TextField",
+            "prefix": "#define BLE_VERSION \"",
+            "value": "1.00",
+            "suffix": "\"",
+            "regex": "^[a-zA-Z0-9_.]*$"
+          },
+          "txPowerLevel": {
+            "name": "TX Power Level (dbm)",
+            "input": "TextField",
+            "prefix": "#define BLE_TX_POWER_LEVEL ",
+            "value": "4",
+            "regex": "^[0-9]*$"
+          },
+          "intervalFineTimer": {
+            "name": "Interval Timer Length (ms)",
+            "input": "TextField",
+            "prefix": "#define BLE_INTERVAL_FINE_TIMER ",
+            "value": "1000",
+            "regex": "^[0-9]*$"
+          },
+          "pairing": {
+            "name": "Pairing",
+            "input": "Combo",
+            "prefix": "#define ",
+            "options": [
+              "BLE_PAIRING_NONE",
+              "BLE_PAIRING_PASSKEY",
+              "BLE_PAIRING_OOB"
+            ],
+            "value": "BLE_PAIRING_NONE",
+            "regex": "^[a-zA-Z0-9_.]*$"
+          }
+        }
+      },
+      "uart": {
+        "name": "AIR UART Driver",
+        "file": "uart_config.h",
+        "values": {
+          "rxBuffer": {
+            "name": "RX Circular Buffer size",
+            "input": "TextField",
+            "prefix": "#define AIR_UART_RX_CIRCULAR_BUFFER_SIZE ",
+            "value": "128",
+            "regex": "^[0-9]*$"
+          },
+          "txBuffer": {
+            "name": "TX Circular Buffer size",
+            "input": "TextField",
+            "prefix": "#define AIR_UART_TX_CIRCULAR_BUFFER_SIZE ",
+            "value": "128",
+            "regex": "^[0-9]*$"
+          },
+          "buad": {
+            "name": "Baudrate",
+            "input": "Combo",
+            "prefix": "#define ",
+            "options": [
+              "AIR_UART_BAUD_115200",
+              "AIR_UART_BAUD_57600",
+              "AIR_UART_BAUD_9600"
+            ],
+            "value": "AIR_UART_BAUD_115200",
+            "regex": "^[a-zA-Z0-9_.]*$"
+          },
+          "txPin": {
+            "name": "TX Pin",
+            "input": "Combo",
+            "prefix": "#define AIR_UART_TX_PIN ",
+            "options": [
+              "32"
+            ],
+            "value": "32",
+            "regex": "^[a-zA-Z0-9_.]*$"
+          },
+          "rxPin": {
+            "name": "RX Pin",
+            "input": "Combo",
+            "prefix": "#define AIR_UART_RX_PIN ",
+            "options": [
+              "33"
+            ],
+            "value": "33",
+            "regex": "^[a-zA-Z0-9_.]*$"
+          },
+          "rtsPin": {
+            "name": "RTS Pin",
+            "input": "Combo",
+            "prefix": "#define AIR_UART_RTS_PIN ",
+            "options": [
+              "1"
+            ],
+            "value": "1",
+            "regex": "^[a-zA-Z0-9_.]*$"
+          },
+          "ctsPin": {
+            "name": "CTS Pin",
+            "input": "Combo",
+            "prefix": "#define AIR_UART_CTS_PIN ",
+            "options": [
+              "3"
+            ],
+            "value": "3",
+            "regex": "^[a-zA-Z0-9_.]*$"
+          }
+        }
+      }
+    },
+    "meta": {
+      "version": "1.0.10-1",
+      "layoutGrid": false,
+      "layoutSnapping": false,
+      "layoutSnappingSize": 10,
+      "language": "en",
+      "enableTooltips": true,
+      "enableAutoSave": true,
+      "enableBuildSave": false,
+      "description": "Writes data to Exosite",
+      "project_uuid": null,
+      "tokensEnabled": false,
+      "codeAssist": false,
+      "highlightLine": false,
+      "editorTheme": "Default",
+      "projectType": "bcm920737",
+      "name": "ExositePostExample"
+    },
+    "type": "Header",
+    "currentLayoutName": "Default"
+  },
+  "layouts": {
+    "Default": {
+      "name": "Default (768x1024)",
+      "width": 768,
+      "height": 1024,
+      "orientation": "portrait",
+      "devicename": ".*",
+      "platform": ".*",
+      "version": ".*",
+      "elements": {
+        "errorReturned": {
+          "x": 163,
+          "y": 281,
+          "width": 227,
+          "height": 34
+        },
+        "Label7": {
+          "x": 35,
+          "y": 281,
+          "width": 114,
+          "height": 34
+        },
+        "Label8": {
+          "x": 35,
+          "y": 55,
+          "width": 355,
+          "height": 34
+        },
+        "tempSent": {
+          "x": 164,
+          "y": 233,
+          "width": 226,
+          "height": 34
+        },
+        "Label12": {
+          "x": 36,
+          "y": 233,
+          "width": 114,
+          "height": 34
+        }
+      }
+    }
+  },
+  "elements": {
+    "WebIO": {
+      "type": "WebIO",
+      "properties": {
+        "uri": "http://m2.exosite.com/api:v1/stack/alias"
+      },
+      "triggers": {
+        "errorReturned": [
+          {
+            "sourceTrigger": "errorReturned",
+            "sourceValue": "getValue",
+            "targetValue": "setValue",
+            "sourceStaticValue": "",
+            "arguments": {
+              "mapping": {
+                "value": "value"
+              },
+              "targetOrder": [
+                "value"
+              ],
+              "sourceOrder": [
+                "value"
+              ]
+            },
+            "targetName": "errorReturned"
+          }
+        ]
+      },
+      "zindex": 1,
+      "designer": {
+        "x": 370,
+        "y": 235
+      }
+    },
+    "errorReturned": {
+      "type": "Label",
+      "properties": {
+        "label": "",
+        "enabled": true,
+        "visible": true,
+        "font": "14px Arial",
+        "color": "Black"
+      },
+      "triggers": {},
+      "zindex": 2,
+      "designer": {
+        "x": 487,
+        "y": 235
+      }
+    },
+    "Label7": {
+      "type": "Label",
+      "properties": {
+        "label": "Error Returned:",
+        "enabled": true,
+        "visible": true,
+        "font": "14px Arial",
+        "color": "Black"
+      },
+      "triggers": {},
+      "zindex": 3,
+      "designer": {
+        "x": 2,
+        "y": 146
+      }
+    },
+    "Label8": {
+      "type": "Label",
+      "properties": {
+        "label": "Exosite Post Demo",
+        "enabled": true,
+        "visible": true,
+        "font": "14px Arial",
+        "color": "Black"
+      },
+      "triggers": {},
+      "zindex": 4,
+      "designer": {
+        "x": 1,
+        "y": 11
+      }
+    },
+    "getTemp": {
+      "type": "Function",
+      "properties": {
+        "code": "    float avgDegC, avgDegF;\n    getAverageTemperatures(&avgDegC, &avgDegF);\n\tsprintf(debugString, \"\\\"%d\\\"\", (int8)(avgDegF+0.5f));  // round and fix and send back.\n\tAIR_UART_Write(debugString, strlen(debugString));      // output to PUART port for debug\n\tAIR_UART_Write(\"\\r\\n\", 2);\n\treturn debugString;\t                                   // send value back to caller"
+      },
+      "triggers": {
+        "valueReturned": [
+          {
+            "sourceTrigger": "valueReturned",
+            "sourceValue": "getValue",
+            "targetValue": "advancedPost",
+            "sourceStaticValue": "",
+            "arguments": {
+              "mapping": {
+                "value": "{\"YourDataSourceAliasHere\": value}",
+                "headers": "{\"X-Exosite-CIK\": \"YourCikHere\", \"Accept\":\"application/x-www-form-urlencoded; charset=utf-8\"}"
+              },
+              "targetOrder": [
+                "value",
+                "headers"
+              ],
+              "sourceOrder": [
+                "value"
+              ]
+            },
+            "targetName": "WebIO"
+          },
+          {
+            "sourceTrigger": "valueReturned",
+            "sourceValue": "getValue",
+            "targetValue": "setValue",
+            "sourceStaticValue": "",
+            "arguments": {
+              "mapping": {
+                "value": "value"
+              },
+              "targetOrder": [
+                "value"
+              ],
+              "sourceOrder": [
+                "value"
+              ]
+            },
+            "targetName": "tempSent"
+          }
+        ]
+      },
+      "zindex": 5,
+      "designer": {
+        "x": 204,
+        "y": 235
+      }
+    },
+    "everyTwoSecs": {
+      "type": "Task",
+      "properties": {
+        "runOnStart": true,
+        "runIn": "2000",
+        "runEvery": "2000"
+      },
+      "triggers": {
+        "task": [
+          {
+            "sourceTrigger": "task",
+            "sourceValue": "Static",
+            "targetValue": "execute",
+            "sourceStaticValue": "",
+            "arguments": {
+              "mapping": {
+                "value": ""
+              },
+              "targetOrder": [
+                "value"
+              ],
+              "sourceOrder": []
+            },
+            "targetName": "getTemp"
+          }
+        ]
+      },
+      "zindex": 6,
+      "designer": {
+        "x": 80,
+        "y": 235
+      }
+    },
+    "tempSent": {
+      "type": "Label",
+      "properties": {
+        "label": "40",
+        "enabled": true,
+        "visible": true,
+        "font": "14px Arial",
+        "color": "Black"
+      },
+      "triggers": {},
+      "zindex": 7,
+      "designer": {
+        "x": 446,
+        "y": 81
+      }
+    },
+    "Label12": {
+      "type": "Label",
+      "properties": {
+        "label": "Value Sent",
+        "enabled": true,
+        "visible": true,
+        "font": "14px Arial",
+        "color": "Black"
+      },
+      "triggers": {},
+      "zindex": 8,
+      "designer": {
+        "x": 3,
+        "y": 76
+      }
+    }
+  }
+}

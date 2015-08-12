@@ -1,0 +1,222 @@
+{
+  "header": {
+    "data": {
+      "order": [
+        "Globals",
+        "Interval",
+        "Connected",
+        "Disconnected",
+        "Setup"
+      ],
+      "Globals": {
+        "name": "Globals",
+        "func": "#include \"callbacks.h\"",
+        "code": "\n#define PIN_GREEN  27\n#define PIN_RED    26\n#define PIN_BLUE   13\n",
+        "close": "//END"
+      },
+      "Interval": {
+        "name": "Interval",
+        "func": "\nvoid interval() {",
+        "code": "    // Read in the 5-way switch, and process it\n    uint16 interruptStatus= XRA1201_GetInterruptStatus(17);\n    uint16 interruptEnabled = XRA1201_GetInterruptEnable(17);\n    uint16 pinStatus= XRA1201_GetGpioState(17);\n    uint16 buttonPress = interruptStatus & interruptEnabled & pinStatus & 0x1F;\n    if(pinStatus & 0x0008) {  // Left (A)\n        AIR_GPIO_Write(PIN_RED, 0); AIR_GPIO_Write(PIN_GREEN, 0); AIR_GPIO_Write(PIN_BLUE, 1);\n    }\n    if(pinStatus & 0x0010) {  // Up (B)\n        AIR_GPIO_Write(PIN_RED, 1); AIR_GPIO_Write(PIN_GREEN, 1); AIR_GPIO_Write(PIN_BLUE, 1);\n    }\n    if(pinStatus & 0x0002) {  // Down (C)\n        AIR_GPIO_Write(PIN_RED, 0); AIR_GPIO_Write(PIN_GREEN, 1); AIR_GPIO_Write(PIN_BLUE, 0);\n    }    \n    if(pinStatus & 0x0001) {  // Right (D)\n        AIR_GPIO_Write(PIN_RED, 1); AIR_GPIO_Write(PIN_GREEN, 0); AIR_GPIO_Write(PIN_BLUE, 0);\n    }    \n    if(pinStatus & 0x0004) {  // Center (E)\n        AIR_GPIO_Write(PIN_RED, 1); AIR_GPIO_Write(PIN_GREEN, 0); AIR_GPIO_Write(PIN_BLUE, 1);\n    }",
+        "close": "}"
+      },
+      "Connected": {
+        "name": "Connected",
+        "func": "\nvoid connected() {",
+        "code": "    ",
+        "close": "}"
+      },
+      "Disconnected": {
+        "name": "Disconnected",
+        "func": "\nvoid disconnected() {",
+        "code": "    ",
+        "close": "}"
+      },
+      "Setup": {
+        "name": "Setup",
+        "func": "\nvoid setup() {",
+        "code": "    AIR_GPIO_Init();\n\tAIR_UART_Init();\n\tAIR_SPI_Init();\n\tBUZZER_Init();\n\tAIR_POWER_Init();\n    AIR_POWER_SetMode(AIR_POWER_NOSLEEP);\t\n    // Initialize the JoyStick and LED's\n\tXRA1201_SetInputPolarityInversion(17, 0xFFFF);     \t// invert all pins so that the active low inputs read back as logic '1'\n    XRA1201_SetInterruptFilterEnable(17, 0xFFFF);       // enable input filter on all pins\n    XRA1201_SetInterruptEnable(17, 0x0000);             // disable all inturrupts\n    XRA1201_GetGpioState(17);\n    AIR_GPIO_SetMode(PIN_RED, AIR_GPIO_OUTPUT_OPEN_DRAIN_NO_PULL); // set as output\n    AIR_GPIO_SetMode(PIN_GREEN, AIR_GPIO_OUTPUT_OPEN_DRAIN_NO_PULL); // set as output\n    AIR_GPIO_SetMode(PIN_BLUE, AIR_GPIO_OUTPUT_OPEN_DRAIN_NO_PULL); // set as output",
+        "close": "}"
+      }
+    },
+    "boardConfiguration": {
+      "ble": {
+        "name": "Bluetooth Low Energy",
+        "file": "ble_config.h",
+        "values": {
+          "localName": {
+            "name": "Local Name",
+            "input": "TextField",
+            "prefix": "#define BLE_LOCAL_NAME \"",
+            "value": "JoyStick",
+            "suffix": "\"",
+            "regex": "^[a-zA-Z0-9_.]*$"
+          },
+          "version": {
+            "name": "Version",
+            "input": "TextField",
+            "prefix": "#define BLE_VERSION \"",
+            "value": "1.00",
+            "suffix": "\"",
+            "regex": "^[a-zA-Z0-9_.]*$"
+          },
+          "txPowerLevel": {
+            "name": "TX Power Level (dbm)",
+            "input": "TextField",
+            "prefix": "#define BLE_TX_POWER_LEVEL ",
+            "value": "4",
+            "regex": "^[0-9]*$"
+          },
+          "intervalFineTimer": {
+            "name": "Interval Timer Length (ms)",
+            "input": "TextField",
+            "prefix": "#define BLE_INTERVAL_FINE_TIMER ",
+            "value": "100",
+            "regex": "^[0-9]*$"
+          },
+          "pairing": {
+            "name": "Pairing",
+            "input": "Combo",
+            "prefix": "#define ",
+            "options": [
+              "BLE_PAIRING_NONE",
+              "BLE_PAIRING_PASSKEY",
+              "BLE_PAIRING_OOB"
+            ],
+            "value": "BLE_PAIRING_NONE",
+            "regex": "^[a-zA-Z0-9_.]*$"
+          }
+        }
+      },
+      "uart": {
+        "name": "AIR UART Driver",
+        "file": "uart_config.h",
+        "values": {
+          "rxBuffer": {
+            "name": "RX Circular Buffer size",
+            "input": "TextField",
+            "prefix": "#define AIR_UART_RX_CIRCULAR_BUFFER_SIZE ",
+            "value": "128",
+            "regex": "^[0-9]*$"
+          },
+          "txBuffer": {
+            "name": "TX Circular Buffer size",
+            "input": "TextField",
+            "prefix": "#define AIR_UART_TX_CIRCULAR_BUFFER_SIZE ",
+            "value": "128",
+            "regex": "^[0-9]*$"
+          },
+          "buad": {
+            "name": "Baudrate",
+            "input": "Combo",
+            "prefix": "#define ",
+            "options": [
+              "AIR_UART_BAUD_115200",
+              "AIR_UART_BAUD_57600",
+              "AIR_UART_BAUD_9600"
+            ],
+            "value": "AIR_UART_BAUD_115200",
+            "regex": "^[a-zA-Z0-9_.]*$"
+          },
+          "txPin": {
+            "name": "TX Pin",
+            "input": "Combo",
+            "prefix": "#define AIR_UART_TX_PIN ",
+            "options": [
+              "32"
+            ],
+            "value": "32",
+            "regex": "^[a-zA-Z0-9_.]*$"
+          },
+          "rxPin": {
+            "name": "RX Pin",
+            "input": "Combo",
+            "prefix": "#define AIR_UART_RX_PIN ",
+            "options": [
+              "33"
+            ],
+            "value": "33",
+            "regex": "^[a-zA-Z0-9_.]*$"
+          },
+          "rtsPin": {
+            "name": "RTS Pin",
+            "input": "Combo",
+            "prefix": "#define AIR_UART_RTS_PIN ",
+            "options": [
+              "1"
+            ],
+            "value": "1",
+            "regex": "^[a-zA-Z0-9_.]*$"
+          },
+          "ctsPin": {
+            "name": "CTS Pin",
+            "input": "Combo",
+            "prefix": "#define AIR_UART_CTS_PIN ",
+            "options": [
+              "3"
+            ],
+            "value": "3",
+            "regex": "^[a-zA-Z0-9_.]*$"
+          }
+        }
+      }
+    },
+    "meta": {
+      "version": "1.0.10-1",
+      "layoutGrid": true,
+      "layoutSnapping": false,
+      "layoutSnappingSize": 20,
+      "language": "en",
+      "enableTooltips": true,
+      "enableAutoSave": true,
+      "enableBuildSave": false,
+      "description": "Joystick Example",
+      "project_uuid": null,
+      "tokensEnabled": false,
+      "codeAssist": false,
+      "highlightLine": false,
+      "editorTheme": "Default",
+      "projectType": "bcm920737",
+      "name": "JoyStickExample"
+    },
+    "type": "Header",
+    "currentLayoutName": "Default"
+  },
+  "layouts": {
+    "Default": {
+      "name": "Default (768x1024)",
+      "width": 768,
+      "height": 1024,
+      "orientation": "portrait",
+      "devicename": ".*",
+      "platform": ".*",
+      "version": ".*",
+      "elements": {
+        "instructions": {
+          "x": 34,
+          "y": 48,
+          "width": 212,
+          "height": 241
+        }
+      }
+    }
+  },
+  "elements": {
+    "instructions": {
+      "type": "Label",
+      "properties": {
+        "label": "JoyStick Example\n\nPush the Joystick and the color\nshould change per the below.\n\nLeft -- Blue\nRight -- Red\nUp -- White\nDown -- Green\nPush -- Purple",
+        "enabled": true,
+        "visible": true,
+        "font": "14px Arial",
+        "color": "Black"
+      },
+      "triggers": {},
+      "zindex": 1,
+      "designer": {
+        "x": 48,
+        "y": 123
+      }
+    }
+  }
+}
